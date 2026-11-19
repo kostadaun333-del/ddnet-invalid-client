@@ -1028,6 +1028,7 @@ void CMenus::Render()
 		{
 			RenderBackground();
 		}
+		GameClient()->m_Invalid.RenderMenuBackground();
 		ms_ColorTabbarInactive = ms_ColorTabbarInactiveOutgame;
 		ms_ColorTabbarActive = ms_ColorTabbarActiveOutgame;
 		ms_ColorTabbarHover = ms_ColorTabbarHoverOutgame;
