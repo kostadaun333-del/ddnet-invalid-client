@@ -56,7 +56,7 @@ jobs:
           cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=Release \
             -DSERVER=OFF -DDOWNLOAD_GTEST=OFF -DGTEST_FOUND=OFF \
             -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=. ..
-          cmake --build . --config Release --target DDNet
+          cmake --build . --config Release --target game-client
           cmake --build . --config Release --target package_default
 
       - name: Show artifacts
