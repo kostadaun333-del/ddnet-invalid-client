@@ -47,6 +47,7 @@
 #include "components/hud.h"
 #include "components/important_alert.h"
 #include "components/infomessages.h"
+#include "components/invalid.h"
 #include "components/items.h"
 #include "components/key_binder.h"
 #include "components/local_server.h"
@@ -151,6 +152,7 @@ class CGameClient : public IGameClient
 public:
 	// all components
 	CInfoMessages m_InfoMessages;
+	CInvalid m_Invalid;
 	CCamera m_Camera;
 	CChat m_Chat;
 	CCensor m_Censor;
