@@ -35,14 +35,20 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 	static char s_EnabledId;
 	MainView.HSplitTop(26.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
-	if(DoButton_CheckBox(&s_EnabledId, "Включить functions invalid", g_Config.m_InvalidEnabled, &Row))
+	if(DoButton_CheckBox(&s_EnabledId, "Включить invalid", g_Config.m_InvalidEnabled, &Row))
 		g_Config.m_InvalidEnabled ^= 1;
 
 	static char s_OverlayId;
 	MainView.HSplitTop(26.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
 	if(DoButton_CheckBox(&s_OverlayId, "Оверлей справа сверху", g_Config.m_InvalidOverlay != 0, &Row))
-		g_Config.m_InvalidOverlay = g_Config.m_InvalidOverlay ? 0 : 1;
+		g_Config.m_InvalidOverlay = g_Config.m_InvalidOverlay ? 0 : 2;
+
+	static char s_ReasonsId;
+	MainView.HSplitTop(26.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	if(DoButton_CheckBox(&s_ReasonsId, "Показывать причины оценки в оверлее", g_Config.m_InvalidShowReasons, &Row))
+		g_Config.m_InvalidShowReasons ^= 1;
 
 	MainView.HSplitTop(14.0f, nullptr, &MainView);
 	MainView.HSplitTop(22.0f, &Row, &MainView);
@@ -59,6 +65,14 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 			g_Config.m_InvalidPet = Mode;
 	}
 
+	MainView.HSplitTop(10.0f, nullptr, &MainView);
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Картинка питомца (.png, полный путь)", FontSize, TEXTALIGN_TL);
+	MainView.HSplitTop(24.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoEditBox(&GameClient()->m_Invalid.PetImageInput(), &Row, 12.0f);
+
 	MainView.HSplitTop(14.0f, nullptr, &MainView);
 	MainView.HSplitTop(22.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
@@ -69,7 +83,7 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 		s_ScrollRegion.AddRect(Row);
 		Row.VSplitMid(&Left, &Right);
 		static CButtonContainer s_aEarsButtons[6];
-		const char *apNames[] = {"Выключены", "Лисьи", "Кроличьи", "Бурые", "Дьявольские", "Неоновые"};
+		const char *apNames[] = {"Выключены", "Лисы", "Кролики", "Бурые", "Дьявольские", "Неоновые"};
 		if(DoButton_Menu(&s_aEarsButtons[Mode], apNames[Mode], g_Config.m_InvalidEars == Mode, &Right))
 			g_Config.m_InvalidEars = Mode;
 	}
@@ -87,18 +101,56 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 	MainView.HSplitTop(14.0f, nullptr, &MainView);
 	MainView.HSplitTop(22.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Фон меню", FontSize, TEXTALIGN_TL);
+	static CButtonContainer s_RainButton;
+	MainView.HSplitTop(26.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	const char *apRainNames[] = {"Дождь выключен", "Дождь в меню", "Дождь всегда"};
+	if(DoButton_Menu(&s_RainButton, apRainNames[g_Config.m_InvalidRain], 0, &Row))
+		g_Config.m_InvalidRain = (g_Config.m_InvalidRain + 1) % 3;
+
+	static char s_LightningId;
+	MainView.HSplitTop(26.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	if(DoButton_CheckBox(&s_LightningId, "Молнии", g_Config.m_InvalidLightning, &Row))
+		g_Config.m_InvalidLightning ^= 1;
+
+	MainView.HSplitTop(14.0f, nullptr, &MainView);
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Анализ демки", FontSize, TEXTALIGN_TL);
+
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Путь к .demo (можно полный путь с диском):", FontSize - 2.0f, TEXTALIGN_TL);
+	MainView.HSplitTop(24.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoEditBox(&GameClient()->m_Invalid.DemoPathInput(), &Row, 12.0f);
+
+	static CButtonContainer s_LoadButton;
+	MainView.HSplitTop(26.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	if(DoButton_Menu(&s_LoadButton, "Загрузить демо и проанализировать", 0, &Row))
+		GameClient()->m_Invalid.LoadDemoAndAnalyze(GameClient()->m_Invalid.DemoPathInput().GetString());
+
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	char aStatus[300];
+	str_format(aStatus, sizeof(aStatus), "Статус: %s", GameClient()->m_Invalid.Status());
+	Ui()->DoLabel(&Row, aStatus, FontSize - 2.0f, TEXTALIGN_TL);
+
+	MainView.HSplitTop(14.0f, nullptr, &MainView);
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
 	Ui()->DoLabel(&Row, "Игроки на сервере", FontSize, TEXTALIGN_TL);
 
 	static CButtonContainer s_AnalyzeButton;
 	MainView.HSplitTop(26.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
-	if(DoButton_Menu(&s_AnalyzeButton, "Предварительный анализ (бин: invalid_analyze)", 0, &Row))
+	if(DoButton_Menu(&s_AnalyzeButton, "Предварительный список игроков", 0, &Row))
 		GameClient()->m_Invalid.RunLocalAnalysis();
 
-	const auto &vAssessments = GameClient()->m_Invalid.Assessments();
 	static CButtonContainer s_aSpectateButtons[MAX_CLIENTS];
-	static CButtonContainer s_aAssessButtons[MAX_CLIENTS];
-
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
 		const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
@@ -108,9 +160,8 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 		MainView.HSplitTop(26.0f, &Row, &MainView);
 		s_ScrollRegion.AddRect(Row);
 
-		CUIRect NameRect, SpectateRect, AssessRect;
-		Row.VSplitRight(80.0f, &NameRect, &AssessRect);
-		NameRect.VSplitRight(80.0f, &NameRect, &SpectateRect);
+		CUIRect NameRect, SpectateRect;
+		Row.VSplitRight(90.0f, &NameRect, &SpectateRect);
 
 		char aName[64];
 		str_format(aName, sizeof(aName), "%d: %s", ClientId, ClientData.m_aName);
@@ -118,31 +169,25 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 
 		if(DoButton_Menu(&s_aSpectateButtons[ClientId], "Спек", 0, &SpectateRect))
 			GameClient()->m_Invalid.SpectatePlayer(ClientId);
-		if(DoButton_Menu(&s_aAssessButtons[ClientId], "Анализ", 0, &AssessRect))
-			GameClient()->m_Invalid.RunLocalAnalysis();
 	}
 
-	MainView.HSplitTop(14.0f, nullptr, &MainView);
-	MainView.HSplitTop(22.0f, &Row, &MainView);
-	s_ScrollRegion.AddRect(Row);
-	Ui()->DoLabel(&Row, "Демки", FontSize, TEXTALIGN_TL);
-	MainView.HSplitTop(36.0f, &Row, &MainView);
-	s_ScrollRegion.AddRect(Row);
-	Ui()->DoLabel(&Row, "Загрузка демо и разбор по эвристикам — этап 3.", FontSize, TEXTALIGN_TL);
-
+	const auto &vAssessments = GameClient()->m_Invalid.Assessments();
 	if(!vAssessments.empty())
 	{
 		MainView.HSplitTop(14.0f, nullptr, &MainView);
 		MainView.HSplitTop(22.0f, &Row, &MainView);
 		s_ScrollRegion.AddRect(Row);
-		Ui()->DoLabel(&Row, "Результаты (предварительно)", FontSize, TEXTALIGN_TL);
-		for(const CInvalid::CAssessment &Assessment : vAssessments)
+		Ui()->DoLabel(&Row, "Результаты анализа демки", FontSize, TEXTALIGN_TL);
+		for(const CInvalid::CAssessment &A : vAssessments)
 		{
-			MainView.HSplitTop(18.0f, &Row, &MainView);
+			MainView.HSplitTop(32.0f, &Row, &MainView);
 			s_ScrollRegion.AddRect(Row);
-			char aLine[256];
-			str_format(aLine, sizeof(aLine), "%s: %s — %s", Assessment.m_aName, CInvalid::VerdictLabel(Assessment.m_Verdict), Assessment.m_aReason);
-			Ui()->DoLabel(&Row, aLine, FontSize - 2.0f, TEXTALIGN_TL);
+			char aLine[300];
+			str_format(aLine, sizeof(aLine), "%s: %s — %d%%", A.m_aName, CInvalid::VerdictLabel(A.m_Verdict), (int)(A.m_Score * 100.0f));
+			Ui()->DoLabel(&Row, aLine, FontSize - 1.0f, TEXTALIGN_TL);
+			CUIRect ReasonRect = Row;
+			ReasonRect.y += 15.0f;
+			Ui()->DoLabel(&ReasonRect, A.m_aReason, FontSize - 3.0f, TEXTALIGN_TL);
 		}
 	}
 
