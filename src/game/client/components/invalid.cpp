@@ -88,13 +88,13 @@ void CInvalid::RunLocalAnalysis()
 
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
-		const CClientData &Client = GameClient()->m_aClients[ClientId];
-		if(!Client.m_Active || Client.m_Spec)
+		const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
+		if(!ClientData.m_Active || ClientData.m_Spec)
 			continue;
 
 		CAssessment Assessment;
 		Assessment.m_ClientId = ClientId;
-		str_copy(Assessment.m_aName, Client.m_aName, sizeof(Assessment.m_aName));
+		str_copy(Assessment.m_aName, ClientData.m_aName, sizeof(Assessment.m_aName));
 		Assessment.m_Verdict = EVerdict::NEUTRAL;
 		Assessment.m_Score = 0.0f;
 		Assessment.m_bHasData = false;
@@ -147,14 +147,14 @@ void CInvalid::RenderCosmetics()
 	if(LocalId < 0 || LocalId >= MAX_CLIENTS)
 		return;
 
-	const CClientData &Client = GameClient()->m_aClients[LocalId];
-	if(!Client.m_Active)
+	const CGameClient::CClientData &ClientData = GameClient()->m_aClients[LocalId];
+	if(!ClientData.m_Active)
 		return;
 
 	if(g_Config.m_InvalidPet != 0)
-		RenderPet(Client.m_RenderPos, m_Time);
+		RenderPet(ClientData.m_RenderPos, m_Time);
 	if(g_Config.m_InvalidEars != 0)
-		RenderEars(Client.m_RenderPos, m_Time);
+		RenderEars(ClientData.m_RenderPos, m_Time);
 }
 
 void CInvalid::RenderPet(const vec2 &Position, float Time)
@@ -234,7 +234,7 @@ void CInvalid::RenderPrank()
 	{
 		const float X = Pos.x + i * 6.0f;
 		const float Y = Pos.y - 30.0f + std::fmod(Drip + i * 3.0f, 20.0f);
-		const IGraphics::CQuadItem Drop(X, Y, 1.5f, 6.0f);
+		IGraphics::CQuadItem Drop(X, Y, 1.5f, 6.0f);
 		Graphics()->QuadsDraw(&Drop, 1);
 	}
 	Graphics()->QuadsEnd();
