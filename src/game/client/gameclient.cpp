@@ -153,6 +153,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Spectator,
 					      &m_Emoticon,
 					      &m_InfoMessages,
+					      &m_Invalid,
 					      &m_Chat,
 					      &m_Broadcast,
 					      &m_ImportantAlert,
@@ -1137,6 +1138,10 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 			{
 				m_Chat.OnMessage(MsgId, pRawMsg);
 			}
+		}
+		else if(MsgId == NETMSGTYPE_SV_MODERATORALERT)
+		{
+			m_ImportantAlert.OnMessage(MsgId, pRawMsg);
 		}
 		return; // no need of all that stuff for the dummy
 	}
