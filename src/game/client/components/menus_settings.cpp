@@ -125,10 +125,6 @@ void CMenus::RenderSettings(CUIRect MainView)
 	{
 		RenderSettingsInvalid(MainView);
 	}
-	else if(g_Config.m_UiSettingsPage == SETTINGS_INVALID)
-	{
-		RenderSettingsInvalid(MainView);
-	}
 	else
 	{
 		dbg_assert_failed("ui_settings_page invalid");
