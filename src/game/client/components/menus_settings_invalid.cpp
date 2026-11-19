@@ -101,8 +101,8 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
-		const CClientData &Client = GameClient()->m_aClients[ClientId];
-		if(!Client.m_Active || Client.m_Spec)
+		const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
+		if(!ClientData.m_Active || ClientData.m_Spec)
 			continue;
 
 		MainView.HSplitTop(26.0f, &Row, &MainView);
@@ -113,7 +113,7 @@ void CMenus::RenderSettingsInvalid(CUIRect MainView)
 		NameRect.VSplitRight(80.0f, &NameRect, &SpectateRect);
 
 		char aName[64];
-		str_format(aName, sizeof(aName), "%d: %s", ClientId, Client.m_aName);
+		str_format(aName, sizeof(aName), "%d: %s", ClientId, ClientData.m_aName);
 		Ui()->DoLabel(&NameRect, aName, FontSize, TEXTALIGN_ML);
 
 		if(DoButton_Menu(&s_aSpectateButtons[ClientId], "Спек", 0, &SpectateRect))
