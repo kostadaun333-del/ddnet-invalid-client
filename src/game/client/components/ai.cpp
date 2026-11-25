@@ -195,7 +195,7 @@ void CAi::Speak(const char *pText)
 		return;
 	}
 
-	AiSpeakLocal(pText, g_Config.m_AiVolume);
+	AiSpeakLocal(pText, g_Config.m_AiVolume, g_Config.m_AiLocalVoice);
 	str_copy(m_aHudText, pText, sizeof(m_aHudText));
 	m_HudUntil = m_Time + SpeechDuration(m_aHudText);
 	SetStatus("Озвучиваю локально.");
@@ -527,7 +527,7 @@ void CAi::OnRender()
 			if(g_Config.m_AiVoiceApi && !Result.m_aAudio.empty())
 				PlayApiAudio(Result.m_aAudio);
 			else
-				AiSpeakLocal(Result.m_Text.c_str(), g_Config.m_AiVolume);
+				AiSpeakLocal(Result.m_Text.c_str(), g_Config.m_AiVolume, g_Config.m_AiLocalVoice);
 		}
 	}
 
