@@ -27,6 +27,7 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_TtsEndpoint;
 	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_TtsModel;
 	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_TtsVoice;
+	static CLineInputBuffered<64> s_Trigger;
 	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_Question;
 
 	if(!s_Initialized)
@@ -38,6 +39,7 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 		s_TtsEndpoint.Set(g_Config.m_AiTtsEndpoint);
 		s_TtsModel.Set(g_Config.m_AiTtsModel);
 		s_TtsVoice.Set(g_Config.m_AiTtsVoice);
+		s_Trigger.Set(g_Config.m_AiTrigger);
 		s_Initialized = true;
 	}
 
@@ -48,6 +50,7 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 	str_copy(g_Config.m_AiTtsEndpoint, s_TtsEndpoint.GetString(), sizeof(g_Config.m_AiTtsEndpoint));
 	str_copy(g_Config.m_AiTtsModel, s_TtsModel.GetString(), sizeof(g_Config.m_AiTtsModel));
 	str_copy(g_Config.m_AiTtsVoice, s_TtsVoice.GetString(), sizeof(g_Config.m_AiTtsVoice));
+	str_copy(g_Config.m_AiTrigger, s_Trigger.GetString(), sizeof(g_Config.m_AiTrigger));
 
 	const float FontSize = 13.0f;
 	CUIRect Row;
@@ -108,6 +111,26 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 		Ui()->DoEditBox(&Input, &Row, 12.0f);
 	};
 
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Когда ИИ отвечает", FontSize, TEXTALIGN_TL);
+	const char *apTriggerModes[] = {"Только кнопки", "По слову-триггеру", "На любое сообщение"};
+	static CButtonContainer s_aTriggerButtons[3];
+	for(int Mode = 0; Mode < 3; ++Mode)
+	{
+		MainView.HSplitTop(26.0f, &Row, &MainView);
+		s_ScrollRegion.AddRect(Row);
+		if(DoButton_Menu(&s_aTriggerButtons[Mode], apTriggerModes[Mode], g_Config.m_AiTriggerMode == Mode, &Row))
+			g_Config.m_AiTriggerMode = Mode;
+	}
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Слово-триггер (по умолчанию «ии»):", FontSize - 2.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(24.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoEditBox(&s_Trigger, &Row, 12.0f);
+
+	MainView.HSplitTop(14.0f, nullptr, &MainView);
 	MainView.HSplitTop(22.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
 	Ui()->DoLabel(&Row, "Подключение (по умолчанию — бесплатный Pollinations без ключа)", FontSize, TEXTALIGN_TL);
