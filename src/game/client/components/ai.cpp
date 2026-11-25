@@ -4,8 +4,11 @@
 #include "ai_voice.h"
 
 #include <base/dbg.h>
+#include <base/fs.h>
+#include <base/io.h>
 #include <base/log.h>
 #include <base/mem.h>
+#include <base/process.h>
 #include <base/str.h>
 #include <base/vmath.h>
 
@@ -61,6 +64,7 @@ void CAi::OnShutdown()
 	{
 		std::lock_guard<std::mutex> Lock(m_Mutex);
 		m_vPending.clear();
+		m_vQueue.clear();
 	}
 	AiShutdownVoice();
 }
@@ -70,6 +74,7 @@ void CAi::OnConsoleInit()
 	Console()->Register("ai_ask", "r[text]", CFGFLAG_CLIENT, ConAsk, this, "Спросить AI (текст)");
 	Console()->Register("ai_roast", "", CFGFLAG_CLIENT, ConRoast, this, "Роаст только для тебя (локально)");
 	Console()->Register("ai_say", "r[text]", CFGFLAG_CLIENT, ConSpeak, this, "Озвучить текст локальным голосом");
+	Console()->Register("ai_listen", "", CFGFLAG_CLIENT, ConListen, this, "Слушать микрофон и спросить AI голосом");
 	Console()->Register("ai_menu", "", CFGFLAG_CLIENT, ConMenu, this, "Открыть настройки AI");
 }
 
@@ -87,6 +92,12 @@ void CAi::ConRoast(IConsole::IResult *pResult, void *pUserData)
 void CAi::ConSpeak(IConsole::IResult *pResult, void *pUserData)
 {
 	static_cast<CAi *>(pUserData)->Speak(pResult->GetString(0));
+}
+
+void CAi::ConListen(IConsole::IResult *pResult, void *pUserData)
+{
+	(void)pResult;
+	static_cast<CAi *>(pUserData)->Listen();
 }
 
 void CAi::ConMenu(IConsole::IResult *pResult, void *pUserData)
@@ -190,11 +201,81 @@ void CAi::Speak(const char *pText)
 	SetStatus("Озвучиваю локально.");
 }
 
+static const char *const gs_pAiSttScript = "invalid_stt.ps1";
+static const char *const gs_pAiSttOut = "invalid_stt.txt";
+
+void CAi::Listen()
+{
+	if(!g_Config.m_AiEnabled)
+	{
+		SetStatus("AI выключен.");
+		return;
+	}
+	fs_remove(gs_pAiSttOut);
+
+	IOHANDLE File = io_open(gs_pAiSttScript, IOFLAG_WRITE);
+	if(File == nullptr)
+	{
+		SetStatus("Не могу записать скрипт микрофона в папку игры.");
+		return;
+	}
+
+	char aSeconds[16];
+	str_format(aSeconds, sizeof(aSeconds), "%d", g_Config.m_AiListenSeconds);
+
+#ifdef _WIN32
+	const char *pScript =
+		"param([string]$Out, [int]$Sec=6)\n"
+		"Add-Type -AssemblyName System.Speech\n"
+		"$rec = New-Object System.Speech.Recognition.SpeechRecognitionEngine\n"
+		"$rec.SetInputToDefaultAudioDevice()\n"
+		"$rec.LoadGrammar((New-Object System.Speech.Recognition.DictationGrammar))\n"
+		"$res = $rec.Recognize([TimeSpan]::FromSeconds($Sec))\n"
+		"$text = if($res){$res.Text}else{''}\n"
+		"[System.IO.File]::WriteAllText($Out, $text)\n";
+	io_write(File, pScript, (unsigned)std::strlen(pScript));
+	io_close(File);
+	const char *apArgs[] = {"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", gs_pAiSttScript, "-Out", gs_pAiSttOut, "-Sec", aSeconds};
+	process_execute("powershell.exe", EShellExecuteWindowState::BACKGROUND, apArgs, 8);
+#else
+	const char *pScript =
+		"#!/bin/sh\n"
+		"arecord -d \"$2\" -f cd -t wav invalid_stt.wav >/dev/null 2>&1 || exit 0\n"
+		"whisper invalid_stt.wav --language Russian --output_format txt --output_dir . >/dev/null 2>&1 || exit 0\n"
+		"cp invalid_stt.txt \"$1\" 2>/dev/null || :\n";
+	io_write(File, pScript, (unsigned)std::strlen(pScript));
+	io_close(File);
+	const char *apArgs[] = {gs_pAiSttScript, gs_pAiSttOut, aSeconds};
+	process_execute("/bin/sh", EShellExecuteWindowState::BACKGROUND, apArgs, 3);
+#endif
+	SetStatus("Слушаю микрофон... говори!");
+}
+
+void CAi::PollSpeechInput()
+{
+	IOHANDLE File = io_open(gs_pAiSttOut, IOFLAG_READ);
+	if(File == nullptr)
+		return;
+	char aText[1024];
+	mem_zero(aText, sizeof(aText));
+	io_read(File, aText, sizeof(aText) - 1);
+	io_close(File);
+	fs_remove(gs_pAiSttOut);
+	const char *pText = str_utf8_skip_whitespaces(aText);
+	if(pText[0] != '\0')
+		Ask(pText);
+	else
+		SetStatus("Микрофон ничего не расслышал. Повтори ai_listen.");
+}
+
 void CAi::StartRequest(SRequest Request)
 {
 	if(m_bBusy.load())
 	{
-		SetStatus("AI ещё думает, подожди...");
+		// Не теряем сообщения: ставим их в очередь и отправляем с интервалом.
+		std::lock_guard<std::mutex> Lock(m_Mutex);
+		m_vQueue.push_back(std::move(Request));
+		SetStatus("AI в очереди...");
 		return;
 	}
 	if(m_Thread.joinable())
@@ -202,6 +283,25 @@ void CAi::StartRequest(SRequest Request)
 	m_bBusy = true;
 	SetStatus("AI думает...");
 	m_Thread = std::thread(&CAi::Worker, this, std::move(Request));
+}
+
+void CAi::ProcessQueue()
+{
+	if(m_bBusy.load() || m_Time < m_NextRequestTime)
+		return;
+	SRequest Next;
+	{
+		std::lock_guard<std::mutex> Lock(m_Mutex);
+		if(m_vQueue.empty())
+			return;
+		Next = std::move(m_vQueue.front());
+		m_vQueue.pop_front();
+	}
+	if(m_Thread.joinable())
+		m_Thread.join();
+	m_bBusy = true;
+	SetStatus("AI думает...");
+	m_Thread = std::thread(&CAi::Worker, this, std::move(Next));
 }
 
 void CAi::Worker(SRequest Request)
@@ -397,6 +497,8 @@ void CAi::OnRender()
 
 	for(SResult &Result : vResults)
 	{
+		// Следующий запрос из очереди — не раньше заданного интервала.
+		m_NextRequestTime = m_Time + (float)g_Config.m_AiRequestDelay;
 		if(Result.m_aError[0] != '\0')
 		{
 			SetStatus(Result.m_aError);
@@ -429,5 +531,7 @@ void CAi::OnRender()
 		}
 	}
 
+	ProcessQueue();
+	PollSpeechInput();
 	RenderHud();
 }
