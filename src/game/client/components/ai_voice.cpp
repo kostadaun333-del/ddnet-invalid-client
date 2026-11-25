@@ -3,9 +3,6 @@
 
 #include <base/dbg.h>
 #include <base/log.h>
-#include <base/str.h>
-
-#include <engine/shared/config.h>
 
 #include <string>
 
@@ -53,43 +50,44 @@ static bool InitVoice()
 		CoUninitialize();
 		return false;
 	}
+	return true;
+}
 
-	// Если задано имя голоса — ищем его среди установленных SAPI-голосов.
-	const std::wstring Wanted = Utf8ToWide(g_Config.m_AiLocalVoice);
-	if(!Wanted.empty())
+// Выбираем конкретный установленный SAPI-голос по подстроке имени.
+static void SelectVoice(const char *pVoice)
+{
+	const std::wstring Wanted = Utf8ToWide(pVoice);
+	if(Wanted.empty())
+		return;
+	ISpObjectTokenCategory *pCategory = nullptr;
+	if(FAILED(CoCreateInstance(CLSID_SpObjectTokenCategory, nullptr, CLSCTX_ALL, IID_ISpObjectTokenCategory, reinterpret_cast<void **>(&pCategory))) || pCategory == nullptr)
+		return;
+	if(SUCCEEDED(pCategory->SetId(SPCAT_VOICES, FALSE)))
 	{
-		ISpObjectTokenCategory *pCategory = nullptr;
-		if(SUCCEEDED(CoCreateInstance(CLSID_SpObjectTokenCategory, nullptr, CLSCTX_ALL, IID_ISpObjectTokenCategory, reinterpret_cast<void **>(&pCategory))) && pCategory != nullptr)
+		IEnumSpObjectTokens *pEnum = nullptr;
+		if(SUCCEEDED(pCategory->EnumTokens(nullptr, nullptr, &pEnum)) && pEnum != nullptr)
 		{
-			if(SUCCEEDED(pCategory->SetId(SPCAT_VOICES, FALSE)))
+			ULONG Count = 0;
+			pEnum->GetCount(&Count);
+			for(ULONG i = 0; i < Count; ++i)
 			{
-				IEnumSpObjectTokens *pEnum = nullptr;
-				if(SUCCEEDED(pCategory->EnumTokens(nullptr, nullptr, &pEnum)) && pEnum != nullptr)
+				ISpObjectToken *pToken = nullptr;
+				if(SUCCEEDED(pEnum->Item(i, &pToken)) && pToken != nullptr)
 				{
-					ULONG Count = 0;
-					pEnum->GetCount(&Count);
-					for(ULONG i = 0; i < Count; ++i)
+					LPWSTR pDescription = nullptr;
+					if(SUCCEEDED(pToken->GetStringValue(nullptr, &pDescription)) && pDescription != nullptr)
 					{
-						ISpObjectToken *pToken = nullptr;
-						if(SUCCEEDED(pEnum->Item(i, &pToken)) && pToken != nullptr)
-						{
-							LPWSTR pDescription = nullptr;
-							if(SUCCEEDED(pToken->GetStringValue(nullptr, &pDescription)) && pDescription != nullptr)
-							{
-								if(std::wcsstr(pDescription, Wanted.c_str()) != nullptr)
-									s_pVoice->SetVoice(pToken);
-								CoTaskMemFree(pDescription);
-							}
-							pToken->Release();
-						}
+						if(std::wcsstr(pDescription, Wanted.c_str()) != nullptr)
+							s_pVoice->SetVoice(pToken);
+						CoTaskMemFree(pDescription);
 					}
-					pEnum->Release();
+					pToken->Release();
 				}
 			}
-			pCategory->Release();
+			pEnum->Release();
 		}
 	}
-	return true;
+	pCategory->Release();
 }
 #else
 static std::string Quote(const std::string &Text)
@@ -107,7 +105,7 @@ static std::string Quote(const std::string &Text)
 }
 #endif
 
-void AiSpeakLocal(const char *pText, int Volume)
+void AiSpeakLocal(const char *pText, int Volume, const char *pVoice)
 {
 	if(pText == nullptr || pText[0] == '\0')
 		return;
@@ -119,6 +117,7 @@ void AiSpeakLocal(const char *pText, int Volume)
 		dbg_msg("invalid/ai", "не удалось запустить локальный голос Windows (SAPI)");
 		return;
 	}
+	SelectVoice(pVoice != nullptr ? pVoice : "");
 	const int WideLength = MultiByteToWideChar(CP_UTF8, 0, pText, -1, nullptr, 0);
 	if(WideLength <= 0)
 		return;
@@ -128,7 +127,7 @@ void AiSpeakLocal(const char *pText, int Volume)
 	s_pVoice->Speak(Wide.c_str(), SPF_ASYNC, nullptr);
 #else
 	std::string Command;
-	const std::string Voice = g_Config.m_AiLocalVoice[0] != '\0' ? g_Config.m_AiLocalVoice : "ru";
+	const std::string Voice = pVoice != nullptr && pVoice[0] != '\0' ? pVoice : "ru";
 	if(system("command -v espeak-ng >/dev/null 2>&1") == 0)
 		Command = "espeak-ng -v " + Quote(Voice) + " -a " + std::to_string(ClampedVolume * 2) + " -- " + Quote(pText) + " >/dev/null 2>&1 &";
 	else if(system("command -v espeak >/dev/null 2>&1") == 0)
