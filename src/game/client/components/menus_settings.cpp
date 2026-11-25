@@ -52,7 +52,8 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("DDNet"),
 		Localize("Assets"),
 		Localize("Credits"),
-		"invalid"};
+		"invalid",
+		"AI"};
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
 
 	for(int i = 0; i < SETTINGS_LENGTH; i++)
@@ -124,6 +125,10 @@ void CMenus::RenderSettings(CUIRect MainView)
 	else if(g_Config.m_UiSettingsPage == SETTINGS_INVALID)
 	{
 		RenderSettingsInvalid(MainView);
+	}
+	else if(g_Config.m_UiSettingsPage == SETTINGS_AI)
+	{
+		RenderSettingsAi(MainView);
 	}
 	else
 	{
