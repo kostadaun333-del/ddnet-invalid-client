@@ -5,6 +5,7 @@
 
 #include <base/dbg.h>
 #include <base/log.h>
+#include <base/mem.h>
 #include <base/str.h>
 #include <base/vmath.h>
 
@@ -91,9 +92,9 @@ void CAi::ConSpeak(IConsole::IResult *pResult, void *pUserData)
 void CAi::ConMenu(IConsole::IResult *pResult, void *pUserData)
 {
 	(void)pResult;
-	(void)pUserData;
+	CAi *pAi = static_cast<CAi *>(pUserData);
 	g_Config.m_UiSettingsPage = CMenus::SETTINGS_AI;
-	GameClient()->m_Menus.SetActive(true);
+	pAi->GameClient()->m_Menus.SetActive(true);
 }
 
 void CAi::Ask(const char *pText)
@@ -361,7 +362,7 @@ void CAi::RenderHud()
 	{
 		const float H = 3.0f + 11.0f * (0.5f + 0.5f * std::sin(m_Time * 9.0f + i * 0.7f));
 		Graphics()->SetColor(0.35f, 0.75f + i * 0.02f, 1.0f, 0.9f);
-		const IGraphics::CQuadItem Bar(X + Width - 88.0f + i * 6.5f, Y + 6.0f + (12.0f - H), 3.0f, H);
+		IGraphics::CQuadItem Bar(X + Width - 88.0f + i * 6.5f, Y + 6.0f + (12.0f - H), 3.0f, H);
 		Graphics()->QuadsDraw(&Bar, 1);
 	}
 	Graphics()->QuadsEnd();
