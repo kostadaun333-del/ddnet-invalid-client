@@ -227,7 +227,7 @@ MACRO_CONFIG_STR(ClDummy7SkinEyes, dummy7_skin_eyes, protocol7::MAX_SKIN_ARRAY_S
 // MACRO_CONFIG_STR(ClCensorUrl, cl_censor_url, 100, "https://info.ddnet.org/censor.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL used to download words to censor (must start with https://)")
 
 MACRO_CONFIG_INT(UiPage, ui_page, 6, 6, 13, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Interface page")
-MACRO_CONFIG_INT(UiSettingsPage, ui_settings_page, 0, 0, 11, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Interface settings page")
+MACRO_CONFIG_INT(UiSettingsPage, ui_settings_page, 0, 0, 12, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Interface settings page")
 
 // invalid
 MACRO_CONFIG_INT(InvalidEnabled, invalid_enabled, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable invalid client features")
@@ -239,6 +239,20 @@ MACRO_CONFIG_INT(InvalidRain, invalid_rain, 1, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SA
 MACRO_CONFIG_INT(InvalidLightning, invalid_lightning, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Lightning flashes")
 MACRO_CONFIG_INT(InvalidAnalysisWindow, invalid_analysis_window, 45, 5, 300, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Heuristic history window (ticks)")
 MACRO_CONFIG_INT(InvalidShowReasons, invalid_show_reasons, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show heuristic reasons in overlay")
+
+// invalid — локальный AI-помощник
+MACRO_CONFIG_INT(AiEnabled, ai_enabled, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable local AI assistant")
+MACRO_CONFIG_INT(AiVoice, ai_voice, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Speak AI answers locally")
+MACRO_CONFIG_INT(AiVoiceApi, ai_voice_api, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use API TTS instead of local OS voice")
+MACRO_CONFIG_INT(AiSendToChat, ai_send_to_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send AI answers to public chat")
+MACRO_CONFIG_INT(AiVolume, ai_volume, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "AI voice volume")
+MACRO_CONFIG_STR(AiEndpoint, ai_endpoint, 255, "https://text.pollinations.ai/openai", CFGFLAG_CLIENT | CFGFLAG_SAVE, "OpenAI-compatible chat endpoint")
+MACRO_CONFIG_STR(AiKey, ai_key, 255, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Optional API key (Pollinations works without one)")
+MACRO_CONFIG_STR(AiModel, ai_model, 128, "openai-fast", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Chat model")
+MACRO_CONFIG_STR(AiSystem, ai_system, 512, "Ты дружелюбный помощник в DDNet. Отвечай по-русски коротко и по делу.", CFGFLAG_CLIENT | CFGFLAG_SAVE, "AI style prompt")
+MACRO_CONFIG_STR(AiTtsEndpoint, ai_tts_endpoint, 255, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Optional OpenAI-compatible TTS endpoint returning opus")
+MACRO_CONFIG_STR(AiTtsModel, ai_tts_model, 128, "gpt-4o-mini-tts", CFGFLAG_CLIENT | CFGFLAG_SAVE, "TTS model")
+MACRO_CONFIG_STR(AiTtsVoice, ai_tts_voice, 64, "alloy", CFGFLAG_CLIENT | CFGFLAG_SAVE, "TTS voice")
 MACRO_CONFIG_INT(UiToolboxPage, ui_toolbox_page, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toolbox page")
 MACRO_CONFIG_STR(UiServerAddress, ui_server_address, 1024, "localhost:8303", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Interface server address")
 MACRO_CONFIG_INT(UiMousesens, ui_mousesens, 200, 1, 100000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Mouse sensitivity for menus/editor")
