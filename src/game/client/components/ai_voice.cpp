@@ -3,6 +3,9 @@
 
 #include <base/dbg.h>
 #include <base/log.h>
+#include <base/str.h>
+
+#include <engine/shared/config.h>
 
 #include <string>
 
@@ -15,9 +18,24 @@
 #endif
 #include <objbase.h>
 #include <sapi.h>
+#include <sphelper.h>
 #include <windows.h>
 
+#include <cwchar>
+
 static ISpVoice *s_pVoice = nullptr;
+
+static std::wstring Utf8ToWide(const char *pText)
+{
+	if(pText == nullptr || pText[0] == '\0')
+		return std::wstring();
+	const int Length = MultiByteToWideChar(CP_UTF8, 0, pText, -1, nullptr, 0);
+	if(Length <= 0)
+		return std::wstring();
+	std::wstring Result(Length - 1, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, pText, -1, &Result[0], Length);
+	return Result;
+}
 #else
 #include <cstdio>
 #include <cstdlib>
@@ -35,6 +53,34 @@ static bool InitVoice()
 	{
 		CoUninitialize();
 		return false;
+	}
+
+	// Если задано имя голоса — ищем его среди установленных SAPI-голосов.
+	const std::wstring Wanted = Utf8ToWide(g_Config.m_AiLocalVoice);
+	if(!Wanted.empty())
+	{
+		IEnumSpObjectTokens *pEnum = nullptr;
+		if(SUCCEEDED(SpEnumTokens(SPCAT_VOICES, nullptr, nullptr, &pEnum)) && pEnum != nullptr)
+		{
+			ULONG Count = 0;
+			pEnum->GetCount(&Count);
+			for(ULONG i = 0; i < Count; ++i)
+			{
+				ISpObjectToken *pToken = nullptr;
+				if(SUCCEEDED(pEnum->Item(i, &pToken)) && pToken != nullptr)
+				{
+					LPWSTR pDescription = nullptr;
+					if(SUCCEEDED(SpGetDescription(pToken, &pDescription)) && pDescription != nullptr)
+					{
+						if(std::wcsstr(pDescription, Wanted.c_str()) != nullptr)
+							s_pVoice->SetVoice(pToken);
+						CoTaskMemFree(pDescription);
+					}
+					pToken->Release();
+				}
+			}
+			pEnum->Release();
+		}
 	}
 	return true;
 }
@@ -75,10 +121,11 @@ void AiSpeakLocal(const char *pText, int Volume)
 	s_pVoice->Speak(Wide.c_str(), SPF_ASYNC, nullptr);
 #else
 	std::string Command;
+	const std::string Voice = g_Config.m_AiLocalVoice[0] != '\0' ? g_Config.m_AiLocalVoice : "ru";
 	if(system("command -v espeak-ng >/dev/null 2>&1") == 0)
-		Command = "espeak-ng -v ru -a " + std::to_string(ClampedVolume * 2) + " -- " + Quote(pText) + " >/dev/null 2>&1 &";
+		Command = "espeak-ng -v " + Quote(Voice) + " -a " + std::to_string(ClampedVolume * 2) + " -- " + Quote(pText) + " >/dev/null 2>&1 &";
 	else if(system("command -v espeak >/dev/null 2>&1") == 0)
-		Command = "espeak -v ru -a " + std::to_string(ClampedVolume * 2) + " -- " + Quote(pText) + " >/dev/null 2>&1 &";
+		Command = "espeak -v " + Quote(Voice) + " -a " + std::to_string(ClampedVolume * 2) + " -- " + Quote(pText) + " >/dev/null 2>&1 &";
 	else if(system("command -v spd-say >/dev/null 2>&1") == 0)
 		Command = "spd-say " + Quote(pText) + " >/dev/null 2>&1 &";
 	else
