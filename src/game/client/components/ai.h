@@ -31,6 +31,8 @@ public:
 	void Ask(const char *pText);
 	void Roast();
 	void Speak(const char *pText);
+	// Вызывается из CChat::SendChat: реагирует на триггер в твоём сообщении.
+	void OnLocalChat(const char *pLine);
 
 	const char *Status() const { return m_aStatus; }
 	bool IsBusy() const { return m_bBusy.load(); }
