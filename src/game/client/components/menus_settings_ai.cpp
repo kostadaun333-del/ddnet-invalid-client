@@ -28,6 +28,9 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_TtsModel;
 	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_TtsVoice;
 	static CLineInputBuffered<64> s_Trigger;
+	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_Delay;
+	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_ListenSeconds;
+	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_LocalVoice;
 	static CLineInputBuffered<IO_MAX_PATH_LENGTH> s_Question;
 
 	if(!s_Initialized)
@@ -40,6 +43,12 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 		s_TtsModel.Set(g_Config.m_AiTtsModel);
 		s_TtsVoice.Set(g_Config.m_AiTtsVoice);
 		s_Trigger.Set(g_Config.m_AiTrigger);
+		char aNumber[32];
+		str_format(aNumber, sizeof(aNumber), "%d", g_Config.m_AiRequestDelay);
+		s_Delay.Set(aNumber);
+		str_format(aNumber, sizeof(aNumber), "%d", g_Config.m_AiListenSeconds);
+		s_ListenSeconds.Set(aNumber);
+		s_LocalVoice.Set(g_Config.m_AiLocalVoice);
 		s_Initialized = true;
 	}
 
@@ -51,6 +60,11 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 	str_copy(g_Config.m_AiTtsModel, s_TtsModel.GetString(), sizeof(g_Config.m_AiTtsModel));
 	str_copy(g_Config.m_AiTtsVoice, s_TtsVoice.GetString(), sizeof(g_Config.m_AiTtsVoice));
 	str_copy(g_Config.m_AiTrigger, s_Trigger.GetString(), sizeof(g_Config.m_AiTrigger));
+	str_copy(g_Config.m_AiLocalVoice, s_LocalVoice.GetString(), sizeof(g_Config.m_AiLocalVoice));
+	int Delay = str_toint(s_Delay.GetString());
+	int Listen = str_toint(s_ListenSeconds.GetString());
+	g_Config.m_AiRequestDelay = Delay < 0 ? 0 : (Delay > 60 ? 60 : Delay);
+	g_Config.m_AiListenSeconds = Listen < 2 ? 2 : (Listen > 20 ? 20 : Listen);
 
 	const float FontSize = 13.0f;
 	CUIRect Row;
@@ -101,7 +115,6 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 	g_Config.m_AiVolume = (int)(Ui()->DoScrollbarH(&s_VolumeId, &Row, (float)g_Config.m_AiVolume / 100.0f) * 100.0f);
 
 	MainView.HSplitTop(14.0f, nullptr, &MainView);
-
 	auto AddEdit = [&](const char *pLabel, CLineInputBuffered<IO_MAX_PATH_LENGTH> &Input) {
 		MainView.HSplitTop(22.0f, &Row, &MainView);
 		s_ScrollRegion.AddRect(Row);
@@ -110,6 +123,15 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 		s_ScrollRegion.AddRect(Row);
 		Ui()->DoEditBox(&Input, &Row, 12.0f);
 	};
+
+	MainView.HSplitTop(22.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Запросы и микрофон", FontSize, TEXTALIGN_TL);
+	AddEdit("Интервал между запросами, сек (по умолчанию 5):", s_Delay);
+	AddEdit("Секунд прослушивания микрофона:", s_ListenSeconds);
+	AddEdit("Имя локального голоса (пусто = системный; Windows: Yulia/Zira, Linux: ru):", s_LocalVoice);
+
+	MainView.HSplitTop(14.0f, nullptr, &MainView);
 
 	MainView.HSplitTop(22.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
@@ -170,6 +192,15 @@ void CMenus::RenderSettingsAi(CUIRect MainView)
 	s_ScrollRegion.AddRect(Row);
 	if(DoButton_Menu(&s_SpeakButton, "Озвучить введённый текст", 0, &Row))
 		GameClient()->m_Ai.Speak(s_Question.GetString());
+
+	static CButtonContainer s_ListenButton;
+	MainView.HSplitTop(28.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	if(DoButton_Menu(&s_ListenButton, "Слушать микрофон (скажи — ИИ ответит)", 0, &Row))
+		GameClient()->m_Ai.Listen();
+	MainView.HSplitTop(20.0f, &Row, &MainView);
+	s_ScrollRegion.AddRect(Row);
+	Ui()->DoLabel(&Row, "Или забиндь команду: bind k ai_listen — тогда K включит прослушивание.", FontSize - 3.0f, TEXTALIGN_TL);
 
 	MainView.HSplitTop(24.0f, &Row, &MainView);
 	s_ScrollRegion.AddRect(Row);
