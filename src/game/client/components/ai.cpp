@@ -3,6 +3,7 @@
 
 #include "ai_voice.h"
 
+#include <base/dbg.h>
 #include <base/log.h>
 #include <base/str.h>
 #include <base/vmath.h>
