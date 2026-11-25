@@ -582,6 +582,9 @@ protected:
 	// found in menus_settings_invalid.cpp
 	void RenderSettingsInvalid(CUIRect MainView);
 
+	// found in menus_settings_ai.cpp
+	void RenderSettingsAi(CUIRect MainView);
+
 	// found in menus_settings_ddnet.cpp
 	void RenderSettingsDDNet(CUIRect MainView);
 
@@ -721,6 +724,7 @@ public:
 		SETTINGS_ASSETS,
 		SETTINGS_CREDITS,
 		SETTINGS_INVALID,
+		SETTINGS_AI,
 
 		SETTINGS_LENGTH,
 	};
