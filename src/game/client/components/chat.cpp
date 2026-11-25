@@ -1366,6 +1366,9 @@ void CChat::SendChat(int Team, const char *pLine)
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
 		return;
 
+	// invalid: ИИ отвечает на триггер в твоём сообщении.
+	GameClient()->m_Ai.OnLocalChat(pLine);
+
 	m_LastChatSend = time();
 
 	if(GameClient()->Client()->IsSixup())
