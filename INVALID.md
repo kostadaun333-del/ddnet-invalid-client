@@ -52,6 +52,14 @@
 Результаты предназначены для личного просмотра; всегда проверяй демо вручную и не публикуй оценку
 как обвинение.
 
+## Скачивание
+
+Актуальный релиз **v0.4.0** (с AI, голосом и триггером «ии»):
+
+- Windows (64-bit): https://github.com/kostadaun333-del/ddnet-invalid-client/releases/download/v0.4.0/DDNet-20.3-win64.zip
+- Linux (x86_64): https://github.com/kostadaun333-del/ddnet-invalid-client/releases/download/v0.4.0/DDNet-20.3-linux_x86_64.tar.xz
+- Все релизы: https://github.com/kostadaun333-del/ddnet-invalid-client/releases
+
 ## Сборка
 
 Готовые сборки Windows и Linux: [Releases](https://github.com/kostadaun333-del/ddnet-invalid-client/releases).
