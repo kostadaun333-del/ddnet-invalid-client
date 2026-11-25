@@ -1,6 +1,7 @@
 /* invalid — локальная озвучка через голосовой движок ОС. */
 #include "ai_voice.h"
 
+#include <base/dbg.h>
 #include <base/log.h>
 
 #include <string>
