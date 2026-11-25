@@ -18,7 +18,6 @@
 #endif
 #include <objbase.h>
 #include <sapi.h>
-#include <sphelper.h>
 #include <windows.h>
 
 #include <cwchar>
@@ -59,27 +58,35 @@ static bool InitVoice()
 	const std::wstring Wanted = Utf8ToWide(g_Config.m_AiLocalVoice);
 	if(!Wanted.empty())
 	{
-		IEnumSpObjectTokens *pEnum = nullptr;
-		if(SUCCEEDED(SpEnumTokens(SPCAT_VOICES, nullptr, nullptr, &pEnum)) && pEnum != nullptr)
+		ISpObjectTokenCategory *pCategory = nullptr;
+		if(SUCCEEDED(CoCreateInstance(CLSID_SpObjectTokenCategory, nullptr, CLSCTX_ALL, IID_ISpObjectTokenCategory, reinterpret_cast<void **>(&pCategory))) && pCategory != nullptr)
 		{
-			ULONG Count = 0;
-			pEnum->GetCount(&Count);
-			for(ULONG i = 0; i < Count; ++i)
+			if(SUCCEEDED(pCategory->SetId(SPCAT_VOICES, FALSE)))
 			{
-				ISpObjectToken *pToken = nullptr;
-				if(SUCCEEDED(pEnum->Item(i, &pToken)) && pToken != nullptr)
+				IEnumSpObjectTokens *pEnum = nullptr;
+				if(SUCCEEDED(pCategory->EnumTokens(nullptr, nullptr, &pEnum)) && pEnum != nullptr)
 				{
-					LPWSTR pDescription = nullptr;
-					if(SUCCEEDED(SpGetDescription(pToken, &pDescription)) && pDescription != nullptr)
+					ULONG Count = 0;
+					pEnum->GetCount(&Count);
+					for(ULONG i = 0; i < Count; ++i)
 					{
-						if(std::wcsstr(pDescription, Wanted.c_str()) != nullptr)
-							s_pVoice->SetVoice(pToken);
-						CoTaskMemFree(pDescription);
+						ISpObjectToken *pToken = nullptr;
+						if(SUCCEEDED(pEnum->Item(i, &pToken)) && pToken != nullptr)
+						{
+							LPWSTR pDescription = nullptr;
+							if(SUCCEEDED(pToken->GetStringValue(nullptr, &pDescription)) && pDescription != nullptr)
+							{
+								if(std::wcsstr(pDescription, Wanted.c_str()) != nullptr)
+									s_pVoice->SetVoice(pToken);
+								CoTaskMemFree(pDescription);
+							}
+							pToken->Release();
+						}
 					}
-					pToken->Release();
+					pEnum->Release();
 				}
 			}
-			pEnum->Release();
+			pCategory->Release();
 		}
 	}
 	return true;
