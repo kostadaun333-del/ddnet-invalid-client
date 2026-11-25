@@ -9,6 +9,7 @@
 #include <game/client/component.h>
 
 #include <atomic>
+#include <deque>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -33,6 +34,8 @@ public:
 	void Speak(const char *pText);
 	// Вызывается из CChat::SendChat: реагирует на триггер в твоём сообщении.
 	void OnLocalChat(const char *pLine);
+	// Микрофон: команда ai_listen запускает распознавание через движок ОС.
+	void Listen();
 
 	const char *Status() const { return m_aStatus; }
 	bool IsBusy() const { return m_bBusy.load(); }
@@ -56,9 +59,12 @@ private:
 	static void ConAsk(IConsole::IResult *pResult, void *pUserData);
 	static void ConRoast(IConsole::IResult *pResult, void *pUserData);
 	static void ConSpeak(IConsole::IResult *pResult, void *pUserData);
+	static void ConListen(IConsole::IResult *pResult, void *pUserData);
 	static void ConMenu(IConsole::IResult *pResult, void *pUserData);
 
 	void StartRequest(SRequest Request);
+	void ProcessQueue();
+	void PollSpeechInput();
 	void Worker(SRequest Request);
 	void PlayApiAudio(const std::vector<unsigned char> &Data);
 	void RenderHud();
@@ -67,6 +73,7 @@ private:
 
 	std::mutex m_Mutex;
 	std::vector<SResult> m_vPending;
+	std::deque<SRequest> m_vQueue;
 	std::thread m_Thread;
 	std::atomic<bool> m_bBusy{false};
 
@@ -75,6 +82,7 @@ private:
 	char m_aHudText[512];
 	float m_HudUntil = 0.0f;
 	float m_Time = 0.0f;
+	float m_NextRequestTime = 0.0f;
 };
 
 #endif
