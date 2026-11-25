@@ -4,7 +4,7 @@
 
 // Говорит текст локально: Windows SAPI, Linux espeak-ng/spd-say.
 // Ничего не отправляет в сеть.
-void AiSpeakLocal(const char *pText, int Volume);
+void AiSpeakLocal(const char *pText, int Volume, const char *pVoice);
 void AiShutdownVoice();
 
 #endif
