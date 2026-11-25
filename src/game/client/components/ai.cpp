@@ -137,6 +137,38 @@ void CAi::Roast()
 	StartRequest(std::move(Request));
 }
 
+void CAi::OnLocalChat(const char *pLine)
+{
+	if(!g_Config.m_AiEnabled || pLine == nullptr || pLine[0] == '\0')
+		return;
+	// Не отвечаем на собственные сообщения ИИ — иначе будет цикл.
+	if(str_startswith_nocase(pLine, "AI:") != nullptr)
+		return;
+	if(g_Config.m_AiTriggerMode <= 0)
+		return;
+
+	char aQuestion[512];
+	if(g_Config.m_AiTriggerMode == 1)
+	{
+		if(g_Config.m_AiTrigger[0] == '\0')
+			return;
+		const char *pEnd = nullptr;
+		const char *pFound = str_utf8_find_nocase(pLine, g_Config.m_AiTrigger, &pEnd);
+		if(pFound == nullptr || pEnd == nullptr)
+			return;
+		// Если после триггера есть текст — используем его, иначе всё сообщение.
+		const char *pRest = str_utf8_skip_whitespaces(pEnd);
+		str_copy(aQuestion, *pRest != '\0' ? pRest : pLine, sizeof(aQuestion));
+	}
+	else
+	{
+		str_copy(aQuestion, pLine, sizeof(aQuestion));
+	}
+
+	if(aQuestion[0] != '\0')
+		Ask(aQuestion);
+}
+
 void CAi::Speak(const char *pText)
 {
 	if(!g_Config.m_AiEnabled)
