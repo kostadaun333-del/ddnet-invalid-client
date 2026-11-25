@@ -253,6 +253,8 @@ MACRO_CONFIG_STR(AiSystem, ai_system, 512, "Ты дружелюбный помо
 MACRO_CONFIG_STR(AiTtsEndpoint, ai_tts_endpoint, 255, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Optional OpenAI-compatible TTS endpoint returning opus")
 MACRO_CONFIG_STR(AiTtsModel, ai_tts_model, 128, "gpt-4o-mini-tts", CFGFLAG_CLIENT | CFGFLAG_SAVE, "TTS model")
 MACRO_CONFIG_STR(AiTtsVoice, ai_tts_voice, 64, "alloy", CFGFLAG_CLIENT | CFGFLAG_SAVE, "TTS voice")
+MACRO_CONFIG_STR(AiTrigger, ai_trigger, 64, "ии", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Chat trigger word")
+MACRO_CONFIG_INT(AiTriggerMode, ai_trigger_mode, 1, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "0 buttons only, 1 trigger word, 2 any message")
 MACRO_CONFIG_INT(UiToolboxPage, ui_toolbox_page, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toolbox page")
 MACRO_CONFIG_STR(UiServerAddress, ui_server_address, 1024, "localhost:8303", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Interface server address")
 MACRO_CONFIG_INT(UiMousesens, ui_mousesens, 200, 1, 100000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Mouse sensitivity for menus/editor")
